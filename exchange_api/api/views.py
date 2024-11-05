@@ -1,12 +1,15 @@
 # exchangeApp/views.py
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
 from .models import Crypto, Stock, User, CryptoHistory
-from .serializer import CryptoSerializer, StockSerializer, UserSerializer, LoginSerializer, CryptoHistorySerializer
+from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, CryptoHistorySerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth.models import User as AuthUser
+from rest_framework.authtoken.models import Token
 
 # Vista para listar y crear registros de Crypto
 class CryptoListCreateView(generics.ListCreateAPIView):
@@ -24,27 +27,54 @@ class StockListCreateView(generics.ListCreateAPIView):
     serializer_class  = StockSerializer
 
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.all()
+    queryset = AuthUser.objects.all()
     serializer_class = UserSerializer
 
-class UserCreateView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+# With rest framework model
+class SignupView(APIView):
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            user = AuthUser.objects.get(username=request.data['username'], email=request.data['email'])
+            user.set_password(request.data['password'])
+            user.save()
 
+            api_user = User.objects.create(
+                username=request.data['username'],
+                email=request.data['email'],
+                password=user.password
+            )
+            api_user.save()
+
+            token = Token.objects.create(user=user)
+            return Response({
+                'message': 'User created successfully',
+                'userId': user.id,
+                'username': user.username,
+                'token': token.key,
+            })
+        return Response(serializer.errors, status=status.HTTP_200_OK)
+
+
+# With own model
+# class SignupView(APIView):
+#     def post(self, request):
+#         serializer = SignupSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = serializer.save()
+#             token = Token.objects.create(user=user)
+#             return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class LoginView(APIView):
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data['username']
-            password = serializer.validated_data['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                # Assuming you have a method to generate a token
-                token = "your_token_generation_method(user)"
-                return Response({'token': token}, status=status.HTTP_200_OK)
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        user = get_object_or_404(AuthUser, username=request.data['username'])
+        if not user.check_password(request.data['password']):
+            return Response({'message':"User not found"}, status=status.HTTP_404_NOT_FOUND)
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key, 'username': user.username})
+
 class cryptoHistoryView(APIView):
     def get(self,request):
         mymodel_objects = CryptoHistory.objects.all()

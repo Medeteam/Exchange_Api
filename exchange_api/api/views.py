@@ -1,9 +1,10 @@
 # exchangeApp/views.py
 from rest_framework import generics, viewsets
-from .models import Crypto, Stock, User
-from .serializer import CryptoSerializer, StockSerializer, UserSerializer, LoginSerializer
+from .models import Crypto, Stock, User, CryptoHistory
+from .serializer import CryptoSerializer, StockSerializer, UserSerializer, LoginSerializer, CryptoHistorySerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -43,3 +44,24 @@ class LoginView(APIView):
                 return Response({'token': token}, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class cryptoHistoryView(APIView):
+    def get(self,request):
+        mymodel_objects = CryptoHistory.objects.all()
+        # Serialize the data
+        serializer = CryptoHistorySerializer(mymodel_objects, many=True)
+        # Return serialized data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class cryptoHistoryIdView(RetrieveAPIView):
+    queryset = CryptoHistory.objects.all()
+    serializer_class = CryptoHistorySerializer
+
+class cryptoHistorySymbolView(APIView):
+    def get(self, request):
+        query = request.query_params.get('symbol')
+        if query:
+            results = CryptoHistory.objects.filter(symbol=query)
+            serializer = CryptoHistorySerializer(results,many = True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'error': 'No search term provided'}, status=status.HTTP_400_BAD_REQUEST)

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Crypto
 from .models import Stock
 from .models import User
+from .models import CryptoHistory
 
 class CryptoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
+
+class CryptoHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CryptoHistory
+        fields = '__all__'

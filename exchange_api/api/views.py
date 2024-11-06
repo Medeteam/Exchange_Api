@@ -11,20 +11,24 @@ from rest_framework import status
 from django.contrib.auth.models import User as AuthUser
 from rest_framework.authtoken.models import Token
 
-# Vista para listar y crear registros de Crypto
-class CryptoListCreateView(generics.ListCreateAPIView):
-    queryset = Crypto.objects.all()  # Recupera todos los registros
-    serializer_class = CryptoSerializer  # Usa el serializador de Crypto
 
-# Vista para ver, actualizar y eliminar un registro específico de Crypto
+class CryptoListCreateView(generics.ListCreateAPIView):
+    queryset = Crypto.objects.all() 
+    serializer_class = CryptoSerializer  
+
 class CryptoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Crypto.objects.all()
     serializer_class = CryptoSerializer
-    lookup_field = 'symbol'  # Utiliza el campo 'symbol' como identificador en la URL
+    lookup_field = 'symbol'  
 
 class StockListCreateView(generics.ListCreateAPIView):
     queryset = Stock.objects.all()
     serializer_class  = StockSerializer
+
+class StockDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Stock.objects.all()
+    serializer_class = StockSerializer
+    lookup_field = 'symbol'
 
 class UserListView(generics.ListAPIView):
     queryset = AuthUser.objects.all()

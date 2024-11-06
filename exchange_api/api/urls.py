@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import CryptoListCreateView, CryptoDetailView, StockListCreateView, UserListView, SignupView, LoginView, cryptoHistoryView, cryptoHistoryIdView, cryptoHistorySymbolView
+from .views import CryptoListCreateView, CryptoDetailView, StockListCreateView, UserListView, SignupView, LoginView, cryptoHistoryView, cryptoHistoryIdView, cryptoHistorySymbolView, StockDetailView
 from rest_framework.routers import DefaultRouter
 
 # router = DefaultRouter()
@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/crypto/', CryptoListCreateView.as_view(), name='crypto-list-create'),
     path('api/crypto/<str:symbol>/', CryptoDetailView.as_view(), name='crypto-detail'),
     path('api/stock/', StockListCreateView.as_view(), name='stock-list-create'),
+    path('api/stock/<str:symbol>/', StockDetailView.as_view(), name='stock-detail'),
     # path('', include(router.urls)),
     path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/auth/signup/', SignupView.as_view(), name='signup'),

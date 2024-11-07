@@ -1,4 +1,5 @@
 # exchangeApp/views.py
+from django.db import connection
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
 from .models import Crypto, Stock, User, CryptoHistory, StocksHistory
@@ -148,3 +149,81 @@ class stockHistorySymbolView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'No search term provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+class HighestPriceStockView(APIView):
+    def get(self, request):
+        highest_price_stock = StocksHistory.objects.order_by('-updated_at', '-price').first()
+        serializer = StockHistorySerializer(highest_price_stock)
+        return Response(serializer.data)
+    
+class HighestPriceCryptoView(APIView):
+    def get(self, request):
+        highest_price_crypto = CryptoHistory.objects.order_by('-updated_at', '-price').first()
+        serializer = CryptoHistorySerializer(highest_price_crypto)
+        return Response(serializer.data)
+
+class LowestPriceStockView(APIView):
+    def get(self, request):
+        lowest_price_stock = StocksHistory.objects.order_by('-updated_at', 'price').first()
+        serializer = StockHistorySerializer(lowest_price_stock)
+        return Response(serializer.data)
+    
+class LowestPriceCryptoView(APIView):
+    def get(self, request):
+        lowest_price_crypto = CryptoHistory.objects.order_by('-updated_at', 'price').first()
+        serializer = CryptoHistorySerializer(lowest_price_crypto)
+        return Response(serializer.data)
+
+class AverageValuesStockView(APIView):
+    def get(self, request):
+        with connection.cursor() as cursor:
+            # Get the latest date
+            cursor.execute("SELECT MAX(updated_at) FROM api_stockshistory")
+            latest_date = cursor.fetchone()[0]
+            
+            # Fetch the averages for the latest date
+            cursor.execute("""
+                SELECT 
+                    AVG(price) AS average_price, 
+                    AVG(volume) AS average_volume, 
+                    AVG(coin_market_cap) AS average_market_cap
+                FROM api_stockshistory
+                WHERE updated_at = %s
+            """, [latest_date])
+            
+            averages = cursor.fetchone()
+        
+        data = {
+            'avgPrice': averages[0],
+            'avgVolume': averages[1],
+            'avgCoinMarketCap': averages[2]
+        }
+        
+        return Response(data)
+    
+class AverageValuesCryptoView(APIView):
+    def get(self, request):
+        with connection.cursor() as cursor:
+            # Get the latest date
+            cursor.execute("SELECT MAX(updated_at) FROM api_cryptohistory")
+            latest_date = cursor.fetchone()[0]
+            
+            # Fetch the averages for the latest date
+            cursor.execute("""
+                SELECT 
+                    AVG(price) AS average_price, 
+                    AVG(volume) AS average_volume, 
+                    AVG(coin_market_cap) AS average_market_cap
+                FROM api_cryptohistory
+                WHERE updated_at = %s
+            """, [latest_date])
+            
+            averages = cursor.fetchone()
+        
+        data = {
+            'avgPrice': averages[0],
+            'avgVolume': averages[1],
+            'avgCoinMarketCap': averages[2]
+        }
+        
+        return Response(data)

@@ -9,7 +9,5 @@ class User(models.Model):
     password = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    favs = models.ForeignKey('Favorites', on_delete=models.SET_NULL, null=True, blank=True)
-
     def __str__(self):
         return self.username

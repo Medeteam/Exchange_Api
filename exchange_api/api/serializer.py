@@ -3,9 +3,7 @@ from .models import Crypto
 from .models import Stock
 from .models import CryptoHistory
 from .models import StocksHistory
-# from .models import User
 from django.contrib.auth.models import User
-# from django.contrib.auth.hashers import make_password
 
 class CryptoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,17 +25,10 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email', 'password')
 
-# Own class model
-# class SignupSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = ('username', 'email', 'password')
-#         extra_kwargs = {'password': {'write_only': True}}
-
-#     def create(self, validated_data):
-#         validated_data['password'] = make_password(validated_data['password'])
-#         user = User.objects.create(**validated_data)
-#         return user
+class LoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'password')
 
 class CryptoHistorySerializer(serializers.ModelSerializer):
     class Meta:

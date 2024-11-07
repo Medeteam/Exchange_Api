@@ -11,6 +11,18 @@ from rest_framework import status
 from django.contrib.auth.models import User as AuthUser
 from rest_framework.authtoken.models import Token
 
+class MarketView(APIView):
+    def get(self, request):
+        cryptos = Crypto.objects.all()
+        stocks = Stock.objects.all()
+        
+        crypto_data = CryptoSerializer(cryptos, many=True).data
+        stock_data = StockSerializer(stocks, many=True).data
+
+        return Response({
+            'cryptos': crypto_data,
+            'stocks': stock_data
+        })
 
 class CryptoListCreateView(generics.ListCreateAPIView):
     queryset = Crypto.objects.all() 

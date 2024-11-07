@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Crypto
 from .models import Stock
 from .models import CryptoHistory
+from .models import StocksHistory
 # from .models import User
 from django.contrib.auth.models import User
 # from django.contrib.auth.hashers import make_password
@@ -41,4 +42,9 @@ class SignupSerializer(serializers.ModelSerializer):
 class CryptoHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = CryptoHistory
+        fields = '__all__'
+
+class StockHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StocksHistory
         fields = '__all__'

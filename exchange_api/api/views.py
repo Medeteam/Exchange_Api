@@ -1,8 +1,8 @@
 # exchangeApp/views.py
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
-from .models import Crypto, Stock, User, CryptoHistory
-from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, CryptoHistorySerializer
+from .models import Crypto, Stock, User, CryptoHistory, StocksHistory
+from .serializer import CryptoSerializer, StockHistorySerializer, StockSerializer, UserSerializer, SignupSerializer, CryptoHistorySerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
@@ -99,3 +99,27 @@ class cryptoHistorySymbolView(APIView):
             serializer = CryptoHistorySerializer(results,many = True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'error': 'No search term provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+class HighestPriceStockView(APIView):
+    def get(self, request):
+        highest_price_stock = StocksHistory.objects.order_by('-updated_at', '-price').first()
+        serializer = StockHistorySerializer(highest_price_stock)
+        return Response(serializer.data)
+    
+class HighestPriceCryptoView(APIView):
+    def get(self, request):
+        highest_price_crypto = CryptoHistory.objects.order_by('-updated_at', '-price').first()
+        serializer = CryptoHistorySerializer(highest_price_crypto)
+        return Response(serializer.data)
+
+class LowestPriceStockView(APIView):
+    def get(self, request):
+        lowest_price_stock = StocksHistory.objects.order_by('-updated_at', 'price').first()
+        serializer = StockHistorySerializer(lowest_price_stock)
+        return Response(serializer.data)
+    
+class LowestPriceCryptoView(APIView):
+    def get(self, request):
+        lowest_price_crypto = CryptoHistory.objects.order_by('-updated_at', 'price').first()
+        serializer = CryptoHistorySerializer(lowest_price_crypto)
+        return Response(serializer.data)

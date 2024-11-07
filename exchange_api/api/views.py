@@ -1,8 +1,8 @@
 # exchangeApp/views.py
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
-from .models import Crypto, Stock, User, CryptoHistory
-from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, CryptoHistorySerializer
+from .models import Crypto, Stock, User, CryptoHistory, StocksHistory
+from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, CryptoHistorySerializer, StockHistorySerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
@@ -94,8 +94,45 @@ class cryptoHistoryIdView(RetrieveAPIView):
 class cryptoHistorySymbolView(APIView):
     def get(self, request):
         query = request.query_params.get('symbol')
+        limit = request.query_params.get('limit')
         if query:
+            try:
+                limit = int(limit) if limit else None
+            except: 
+                return Response({'error': "invalid limit parameter"}, status= status.HTTP_400_BAD_REQUEST)
             results = CryptoHistory.objects.filter(symbol=query)
+            if limit is not None:
+                results = results[:limit]
             serializer = CryptoHistorySerializer(results,many = True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'error': 'No search term provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+class stockHistoryView(APIView):
+    def get(self,request):
+        mymodel_objects = StocksHistory.objects.all()
+        # Serialize the data
+        serializer = StockHistorySerializer(mymodel_objects, many=True)
+        # Return serialized data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class stockHistoryIdView(RetrieveAPIView):
+    queryset = StocksHistory.objects.all()
+    serializer_class = StockHistorySerializer
+
+class stockHistorySymbolView(APIView):
+    def get(self, request):
+        query = request.query_params.get('symbol')
+        limit = request.query_params.get('limit')
+        if query:
+            try:
+                limit = int(limit) if limit else None
+            except: 
+                return Response({'error': "invalid limit parameter"}, status= status.HTTP_400_BAD_REQUEST)
+            
+            results = StocksHistory.objects.filter(symbol=query)
+            if limit is not None:
+                results = results[:limit]
+            serializer = StockHistorySerializer(results,many = True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No search term provided'}, status=status.HTTP_400_BAD_REQUEST)

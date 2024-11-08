@@ -1,9 +1,10 @@
 # exchangeApp/views.py
 from django.db import connection
 from django.shortcuts import get_object_or_404
+from django.db.models import OuterRef, Subquery
 from rest_framework import generics, viewsets
 from .models import Crypto, Stock, User, CryptoHistory, StocksHistory, FavoriteCrypto, FavoriteStock
-from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, LoginSerializer, CryptoHistorySerializer, StockHistorySerializer
+from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, LoginSerializer, CryptoHistorySerializer, StockHistorySerializer, MarketStockSerializer, MarketCryptoSerializer
 from .serializer import FavoriteCryptoSerializer, FavoriteStockSerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
@@ -16,16 +17,31 @@ from rest_framework.permissions import IsAuthenticated
 
 class MarketView(APIView):
     def get(self, request):
-        cryptos = Crypto.objects.all()
-        stocks = Stock.objects.all()
-        
-        crypto_data = CryptoSerializer(cryptos, many=True).data
-        stock_data = StockSerializer(stocks, many=True).data
+        latest_stocks = StocksHistory.objects.filter(
+            updated_at=Subquery(
+                StocksHistory.objects.filter(symbol_id=OuterRef('symbol_id'))
+                .order_by('updated_at')
+                .values('updated_at')[:1] 
+            )
+        )
 
-        return Response({
-            'cryptos': crypto_data,
-            'stocks': stock_data
-        })
+        latest_cryptos = CryptoHistory.objects.filter(
+            updated_at=Subquery(
+                CryptoHistory.objects.filter(symbol_id=OuterRef('symbol_id'))
+                .order_by('updated_at')
+                .values('updated_at')[:1] 
+            )
+        )
+
+        stock_serializer = MarketStockSerializer(latest_stocks, many=True)
+        crypto_serializer = MarketCryptoSerializer(latest_cryptos, many=True)
+
+        data = {
+            'latest_stocks': stock_serializer.data,
+            'latest_cryptos': crypto_serializer.data,
+        } 
+
+        return Response(data)
 
 class CryptoListCreateView(generics.ListCreateAPIView):
     queryset = Crypto.objects.all() 
@@ -306,3 +322,5 @@ class FavoriteStockView(APIView):
  
         data = {"message": "Favorite updated successfully"}
         return Response(data, status=status.HTTP_201_CREATED)
+    
+

@@ -53,3 +53,13 @@ class FavoriteStockSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteStock
         fields = ['stock']
+
+class MarketCryptoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CryptoHistory
+        fields = ('symbol_id' , 'price', 'volume', 'coin_market_cap')
+
+class MarketStockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StocksHistory
+        fields = ('symbol_id' , 'price', 'volume', 'coin_market_cap')

@@ -237,8 +237,24 @@ class FavoritesView(APIView):
         crypto_data = FavoriteCryptoSerializer(favorite_cryptos, many=True).data
         stock_data = FavoriteStockSerializer(favorite_stocks, many=True).data
 
-        combined_data = crypto_data + stock_data
-        print(combined_data)
+        combined_data = []
+
+        for item in crypto_data:
+            flattened_item = {
+                'type': 'crypto',
+                'symbol': item['crypto']['symbol'],
+                'web_page': item['crypto']['web_page'],
+                'start_date': item['crypto']['start_date']
+            }
+            combined_data.append(flattened_item)
+        for item in stock_data:
+            flattened_item = {
+                'type': 'stock',
+                'symbol': item['stock']['symbol'],
+                'web_page': item['stock']['web_page'],
+                'start_date': item['stock']['started_at']
+            }
+            combined_data.append(flattened_item)
 
         return Response(combined_data)
 
@@ -253,7 +269,14 @@ class FavoriteCryptoView(APIView):
  
         favorites = FavoriteCrypto.objects.filter(user=user).select_related('crypto')
         serializer = FavoriteCryptoSerializer(favorites, many=True)
-        return Response(serializer.data)
+        data = []
+        for item in serializer.data:
+            data.append({
+                'symbol': item['crypto']['symbol'],
+                'web_page': item['crypto']['web_page'],
+                'start_date': item['crypto']['start_date']
+            })
+        return Response(data)
  
     def post(self, request):
         user = request.user
@@ -286,7 +309,15 @@ class FavoriteStockView(APIView):
  
         favorites = FavoriteStock.objects.filter(user=user).select_related('stock')
         serializer = FavoriteStockSerializer(favorites, many=True)
-        return Response(serializer.data)
+        data = []
+        for item in serializer.data:
+            data.append({
+                'symbol': item['stock']['symbol'],
+                'web_page': item['stock']['web_page'],
+                'start_date': item['stock']['started_at']
+            })
+
+        return Response(data)
  
     def post(self, request):
         user = request.user

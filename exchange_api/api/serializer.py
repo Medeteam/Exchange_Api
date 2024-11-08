@@ -3,6 +3,7 @@ from .models import Crypto
 from .models import Stock
 from .models import CryptoHistory
 from .models import StocksHistory
+from .models import FavoriteCrypto, FavoriteStock
 from django.contrib.auth.models import User
 
 class CryptoSerializer(serializers.ModelSerializer):
@@ -25,10 +26,9 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email', 'password')
 
-class LoginSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'password')
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
 
 class CryptoHistorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,3 +39,17 @@ class StockHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = StocksHistory
         fields = '__all__'
+
+class FavoriteCryptoSerializer(serializers.ModelSerializer):
+    crypto = CryptoSerializer()
+
+    class Meta:
+        model = FavoriteCrypto
+        fields = ['crypto']
+
+class FavoriteStockSerializer(serializers.ModelSerializer):
+    stock = StockSerializer()
+
+    class Meta:
+        model = FavoriteStock
+        fields = ['stock']

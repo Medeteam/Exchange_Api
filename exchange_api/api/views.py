@@ -2,8 +2,9 @@
 from django.db import connection
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
-from .models import Crypto, Stock, User, CryptoHistory, StocksHistory
+from .models import Crypto, Stock, User, CryptoHistory, StocksHistory, FavoriteCrypto, FavoriteStock
 from .serializer import CryptoSerializer, StockSerializer, UserSerializer, SignupSerializer, LoginSerializer, CryptoHistorySerializer, StockHistorySerializer
+from .serializer import FavoriteCryptoSerializer, FavoriteStockSerializer
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User as AuthUser
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
 
 class MarketView(APIView):
     def get(self, request):
@@ -53,7 +55,7 @@ class SignupView(APIView):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            user = AuthUser.objects.get(username=serializer.data['username'])
+            user = AuthUser.objects.get(username=request.data['username'], email=request.data['email'])
             user.set_password(request.data['password'])
             user.save()
 
@@ -219,3 +221,88 @@ class AverageValuesCryptoView(APIView):
         }
         
         return Response(data)
+    
+class FavoritesView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        # Ensure `user` is an instance of `User`
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+ 
+        favorite_cryptos = FavoriteCrypto.objects.filter(user=user).select_related('crypto')
+        favorite_stocks = FavoriteStock.objects.filter(user=user).select_related('stock')
+
+        crypto_data = FavoriteCryptoSerializer(favorite_cryptos, many=True).data
+        stock_data = FavoriteStockSerializer(favorite_stocks, many=True).data
+
+        combined_data = crypto_data + stock_data
+        print(combined_data)
+
+        return Response(combined_data)
+
+class FavoriteCryptoView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        # Ensure `user` is an instance of `User`
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+ 
+        favorites = FavoriteCrypto.objects.filter(user=user).select_related('crypto')
+        serializer = FavoriteCryptoSerializer(favorites, many=True)
+        return Response(serializer.data)
+ 
+    def post(self, request):
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+        symbol = request.data.get('symbol')
+ 
+        with connection.cursor() as cursor:
+            # Check if the symbol exists in the `api_crypto` table
+            cursor.execute("SELECT symbol FROM api_crypto WHERE symbol = %s", [symbol])
+            if cursor.fetchone() is None:
+                return Response({'message': "Symbol doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
+            if FavoriteCrypto.objects.filter(user=user, crypto__symbol=symbol).exists():
+                return Response({'message': 'Symbol is already in favorites'}, status=status.HTTP_409_CONFLICT)
+
+            # Insert the favorite record
+            cursor.execute("INSERT INTO api_favoritecrypto(user_id, crypto_id) VALUES (%s, %s)", [user.user_id, symbol])
+ 
+        data = {"message": "Favorite updated successfully"}
+        return Response(data, status=status.HTTP_201_CREATED)
+
+class FavoriteStockView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        # Ensure `user` is an instance of `User`
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+ 
+        favorites = FavoriteStock.objects.filter(user=user).select_related('stock')
+        serializer = FavoriteStockSerializer(favorites, many=True)
+        return Response(serializer.data)
+ 
+    def post(self, request):
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+        symbol = request.data.get('symbol')
+ 
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT symbol FROM api_stock WHERE symbol = %s", [symbol])
+            if cursor.fetchone() is None:
+                return Response({'message': "Symbol doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
+            if FavoriteStock.objects.filter(user=user, stock__symbol=symbol).exists():
+                return Response({'message': 'Symbol is already in favorites'}, status=status.HTTP_409_CONFLICT)
+
+            # Insert the favorite record
+            cursor.execute("INSERT INTO api_favoritestock(user_id, stock_id) VALUES (%s, %s)", [user.user_id, symbol])
+ 
+        data = {"message": "Favorite updated successfully"}
+        return Response(data, status=status.HTTP_201_CREATED)

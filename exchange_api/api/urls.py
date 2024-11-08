@@ -1,10 +1,8 @@
 from django.urls import path, include
 from .views import CryptoListCreateView, CryptoDetailView, StockListCreateView,UserListView, SignupView, LoginView, cryptoHistoryView, cryptoHistoryIdView, cryptoHistorySymbolView, StockDetailView, stockHistorySymbolView, stockHistoryIdView, stockHistoryView, MarketView
-from .views import HighestPriceStockView, HighestPriceCryptoView, LowestPriceStockView, LowestPriceCryptoView, AverageValuesStockView, AverageValuesCryptoView
+from .views import HighestPriceStockView, HighestPriceCryptoView, LowestPriceStockView, LowestPriceCryptoView, AverageValuesStockView, AverageValuesCryptoView, FavoriteCryptoView, FavoriteStockView, FavoritesView
 from rest_framework.routers import DefaultRouter
 
-# router = DefaultRouter()
-# router.register(r'api/users', UserListView)
 
 urlpatterns = [
     path('api/market', MarketView.as_view(), name = 'market-list'),
@@ -26,6 +24,9 @@ urlpatterns = [
     path('api/market/cryptos/highest-price/', HighestPriceCryptoView.as_view(), name='highest-crypto-price'),
     path('api/market/stocks/lowest-price/', LowestPriceStockView.as_view(), name='lowest-stock-price'),
     path('api/market/cryptos/lowest-price/', LowestPriceCryptoView.as_view(), name='lowest-crypto-price'),
-    path('api/market/stocks/average', AverageValuesStockView.as_view(), name='average-stock-values'),
-    path('api/market/cryptos/average', AverageValuesCryptoView.as_view(), name='average-crypto-values')
+    path('api/market/stocks/average/', AverageValuesStockView.as_view(), name='average-stock-values'),
+    path('api/market/cryptos/average/', AverageValuesCryptoView.as_view(), name='average-crypto-values'),
+    path('api/users/favorites/', FavoritesView.as_view(), name='favorites'),
+    path('api/users/favorites/cryptos/', FavoriteCryptoView.as_view(), name='favorite-cryptos'),
+    path('api/users/favorites/stocks/', FavoriteStockView.as_view(), name='favorite-stocks'),
 ]

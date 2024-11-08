@@ -313,6 +313,18 @@ class FavoriteCryptoView(APIView):
  
         data = {"message": "Favorite updated successfully"}
         return Response(data, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request):
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+        symbol = request.data.get('symbol')
+        favorite = FavoriteCrypto.objects.filter(user=user, crypto__symbol=symbol)
+        if favorite.exists():
+            favorite.delete()
+            return Response({"message": "Favorite deleted successfully"})
+        return Response({"message": "Symbol not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class FavoriteStockView(APIView):
     permission_classes = [IsAuthenticated]
@@ -354,4 +366,13 @@ class FavoriteStockView(APIView):
         data = {"message": "Favorite updated successfully"}
         return Response(data, status=status.HTTP_201_CREATED)
     
-
+    def delete(self, request):
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+        symbol = request.data.get('symbol')
+        favorite = FavoriteStock.objects.filter(user=user, stock__symbol=symbol)
+        if favorite.exists():
+            favorite.delete()
+            return Response({"message": "Favorite deleted successfully"})
+        return Response({"message": "Symbol not found"}, status=status.HTTP_404_NOT_FOUND)

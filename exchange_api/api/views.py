@@ -221,6 +221,26 @@ class AverageValuesCryptoView(APIView):
         }
         
         return Response(data)
+    
+class FavoritesView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        # Ensure `user` is an instance of `User`
+        user = request.user
+        if not isinstance(user, User):
+            user = User.objects.get(username=user)
+ 
+        favorite_cryptos = FavoriteCrypto.objects.filter(user=user).select_related('crypto')
+        favorite_stocks = FavoriteStock.objects.filter(user=user).select_related('stock')
+
+        crypto_data = FavoriteCryptoSerializer(favorite_cryptos, many=True).data
+        stock_data = FavoriteStockSerializer(favorite_stocks, many=True).data
+
+        combined_data = crypto_data + stock_data
+        print(combined_data)
+
+        return Response(combined_data)
 
 class FavoriteCryptoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -246,7 +266,9 @@ class FavoriteCryptoView(APIView):
             cursor.execute("SELECT symbol FROM api_crypto WHERE symbol = %s", [symbol])
             if cursor.fetchone() is None:
                 return Response({'message': "Symbol doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
- 
+            if FavoriteCrypto.objects.filter(user=user, crypto__symbol=symbol).exists():
+                return Response({'message': 'Symbol is already in favorites'}, status=status.HTTP_409_CONFLICT)
+
             # Insert the favorite record
             cursor.execute("INSERT INTO api_favoritecrypto(user_id, crypto_id) VALUES (%s, %s)", [user.user_id, symbol])
  
@@ -273,11 +295,12 @@ class FavoriteStockView(APIView):
         symbol = request.data.get('symbol')
  
         with connection.cursor() as cursor:
-            # Check if the symbol exists in the `api_crypto` table
             cursor.execute("SELECT symbol FROM api_stock WHERE symbol = %s", [symbol])
             if cursor.fetchone() is None:
                 return Response({'message': "Symbol doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
- 
+            if FavoriteStock.objects.filter(user=user, stock__symbol=symbol).exists():
+                return Response({'message': 'Symbol is already in favorites'}, status=status.HTTP_409_CONFLICT)
+
             # Insert the favorite record
             cursor.execute("INSERT INTO api_favoritestock(user_id, stock_id) VALUES (%s, %s)", [user.user_id, symbol])
  
